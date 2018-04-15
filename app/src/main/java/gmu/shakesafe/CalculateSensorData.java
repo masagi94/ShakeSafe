@@ -113,9 +113,21 @@ public class CalculateSensorData extends AsyncTask<SensorEvent, Void, Void> {
                         } else if (canUpload && (newAcc >= sdObject.getThreshold()) && screenDelayDone) {
 
                             canUpload = false;
-                            MainActivity.storeData(0, 0, 0);
+                            MainActivity.storeData();
 
-                            new UploadData().execute(GlobalContext);
+                            UploadData up = new UploadData();
+                            up.mContext = GlobalContext;
+                            up.uploadFolder = "s3Folder/";
+                            up.uploadFile = "SensorData";
+                            up.execute();
+
+                            UploadData up2 = new UploadData();
+                            up2.mContext = GlobalContext;
+                            up2.uploadFolder = "ActiveUsers/";
+                            up2.uploadFile = "ActiveSignal";
+                            up2.execute();
+
+//                            new UploadData().execute(GlobalContext);
                             Log.d(LOG_TAG, "UPLOADING...");
                         }
                     } else

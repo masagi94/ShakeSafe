@@ -15,7 +15,10 @@ public class StandardDeviationObject {
     private boolean arrayFull = false;
 
     // Constructor
-    public StandardDeviationObject() {}
+    public StandardDeviationObject() {
+        magnitudes = new double[500];
+        sdMultiplier = 3;
+    }
 
     public StandardDeviationObject(int sampleNum, double sdMultiplier){
         magnitudes = new double[sampleNum];
@@ -25,27 +28,51 @@ public class StandardDeviationObject {
 
     // Getters and setters
 
-    public int getMagnitudesIndex() {return magnitudesIndex;}
+    public void setMagnitudesIndex(int magnitudesIndex) {
+        StandardDeviationObject.magnitudesIndex = magnitudesIndex;
+    }
 
-    public void setMagnitudesIndex(int magnitudesIndex) {StandardDeviationObject.magnitudesIndex = magnitudesIndex;}
+    public void setMagnitudes(double[] magnitudes) {
+        StandardDeviationObject.magnitudes = magnitudes;
+    }
 
-    public double[] getMagnitudes() {return magnitudes;}
+    public void setSum(double sum) {
+        this.sum = sum;
+    }
 
-    public void setMagnitudes(double[] magnitudes) {StandardDeviationObject.magnitudes = magnitudes;}
+    public void setThreshold(double mean) {
+        this.threshold = mean + sdMultiplier*currentSD;
+    }
 
-    public double getSum() {return sum;}
+    public void setCurrentSD(double currentSD) {
+        this.currentSD = currentSD;
+    }
 
-    public void setSum(double sum) {this.sum = sum;}
+    public void setArrayFull(boolean arrayFull) {
+        this.arrayFull = arrayFull;
+    }
 
-    public double getThreshold() {return threshold;}
+    public int getMagnitudesIndex() {
+        return magnitudesIndex;
+    }
 
-    public void setThreshold(double mean) {this.threshold = mean + sdMultiplier*currentSD;}
+    public double[] getMagnitudes() {
+        return magnitudes;
+    }
 
-    public double getCurrentSD() {return currentSD;}
+    public double getSum() {
+        return sum;
+    }
 
-    public void setCurrentSD(double currentSD) {this.currentSD = currentSD;}
+    public double getThreshold() {
+        return threshold;
+    }
 
-    public boolean isArrayFull() {return arrayFull;}
+    public double getCurrentSD() {
+        return currentSD;
+    }
 
-    public void setArrayFull(boolean arrayFull) {this.arrayFull = arrayFull;}
+    public boolean isArrayFull() {
+        return arrayFull;
+    }
 }

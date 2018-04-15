@@ -20,13 +20,20 @@ import java.io.File;
 // This uploads files to the cloud. The 'key' is the folder on the cloud that the files will be stored in. If the folder
 // doesn't already exist, it creates it. If it exists, it stores it in there. getFilesDir() retrieves the files stored locally
 // on the phone. The local file was named 'SensorData' in another function.
-public class UploadData extends AsyncTask<Context, Void, Void> {
+public class UploadData extends AsyncTask<Void, Void, Void> {
+
+    // Which folder we are uploading to. Will either be s3Folder, or ActiveUsers.
+    public String uploadFolder = "";
+
+    // Which file we are uploading. Either SensorData, or ActiveSignal
+    public String uploadFile = "";
+
+    public Context mContext;
+
 
     @Override
-    protected Void doInBackground(Context... c) {
-        final Context mContext = c[0];
-
-        //final MainActivity m = new MainActivity();
+    protected Void doInBackground(Void... voids) {
+        //final Context mContext = c[0];
 
         TransferUtility transferUtility =
                 TransferUtility.builder()
@@ -38,8 +45,8 @@ public class UploadData extends AsyncTask<Context, Void, Void> {
 
         final TransferObserver uploadObserver =
                 transferUtility.upload(
-                        "s3Folder/" + MainActivity.uniqueID + ".txt",
-                        new File(mContext.getFilesDir(), "SensorData"));
+                        uploadFolder + MainActivity.uniqueID + ".txt",
+                        new File(mContext.getFilesDir(), uploadFile));
 
         uploadObserver.setTransferListener(new TransferListener() {
 
@@ -89,9 +96,9 @@ public class UploadData extends AsyncTask<Context, Void, Void> {
     }
 
     private void deleteFile(Context mContext){
-        mContext.deleteFile("SensorData");
+        mContext.deleteFile(uploadFile);
 
-        File file = mContext.getFileStreamPath("SensorData");
+        File file = mContext.getFileStreamPath(uploadFile);
 
         if (file == null || !file.exists()) {
             Log.d("MainActivity", "FILE DELETED");

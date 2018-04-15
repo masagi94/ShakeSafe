@@ -65,8 +65,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     //*******************************************************************************
 
 
-
-
     // A UUID that will be used to upload data to the cloud. This unique ID will only be generated one time.
     // After it is generated, it will be stored on the phone, and every time the phone runs it will look for the
     // folder where the file is and read the UUID for future uploads. This will help us determine which phones are
@@ -108,7 +106,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
      * A multiplier of 3 would equate to: threshold = mean - 3*standardDeviation.
      * This standard deviation object is used by CalculateSD.java, as well as here.
      */
-    public static StandardDeviationObject sdObject = new StandardDeviationObject(500, 6);
+    public static StandardDeviationObject sdObject = new StandardDeviationObject(500, 3);
 
     public static SensorObject accSensor = new SensorObject();
 
@@ -343,7 +341,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public void onStop() {
         super.onStop();
         Log.d(TAG, "-- ON STOP --");
-        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_FASTEST);
+        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_GAME);
 
     }
 
@@ -353,7 +351,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         super.onResume();
         Log.d(TAG, "-- ON RESUME --");
 
-        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_FASTEST);
+        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_GAME);
 
 //
 //        //register notification receiver
@@ -404,7 +402,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             return String.valueOf(longitude) + "/" +
                     String.valueOf(latitude) + "/" +
                     String.valueOf(accuracy) + "/" +
-                    String.valueOf(time) + "*";
+                    String.valueOf(time);
         } catch (Exception e) {
             Toast.makeText(GlobalContext, "Location not found.", Toast.LENGTH_LONG).show();
             return null;
@@ -443,7 +441,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         new CalculateSensorData().execute(event);
         // If the current tab is the sensor tab, then update the sensors
-        //n.getStatus();  && n.getStatus()== AsyncTask.Status.FINISHED
 
         if (mViewPager.getCurrentItem() == 2)
             setSensorValues();
@@ -464,14 +461,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     public void run() {
                         canUpload = true;
                         Log.d(LOG_TAG, "READY TO UPLOAD");
-                        //canStoreData = true;
                     }
                 });
             }
         }).start();
     }
 
-    // This timer will create a 15 second delay once the screen is turned off before
+    // This timer will create a 10 second delay once the screen is turned off before
     // the phone can upload values
     public static void screenOffTimer() {
         new Thread(new Runnable() {
@@ -493,14 +489,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
 
     // Function for storing data internally on the phone.
-    public static void storeData(float xValue, float yValue, float zValue) {
+    public static void storeData() {
 
-        String location = getLocation();
+//        String location = getLocation();
 
-        String data = String.valueOf(xValue) + "/" +
-                String.valueOf(yValue) + "/" +
-                String.valueOf(zValue) + "/" +
-                location;
+        String[] data = getLocation().split("/");
+
+        String userFilesData = data[0] + "/" + data[1] + "/" + data[2] + "/" + data[3];
+        String activeUsersData = data[0] + "/" + data[1];
+
 
         // creates the text file to write to if it doesn't exist yet
         if (!fileCreated) {
@@ -513,7 +510,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // can use Context.MODE_APPEND to add to the end of the file...
         try {
             outputStream = GlobalContext.openFileOutput("SensorData", Context.MODE_PRIVATE);
-            outputStream.write(data.getBytes());
+            outputStream.write(userFilesData.getBytes());
+
+            outputStream = GlobalContext.openFileOutput("ActiveSignal", Context.MODE_PRIVATE);
+            outputStream.write(activeUsersData.getBytes());
+
             outputStream.close();
         } catch (Exception e) {
             e.printStackTrace();
@@ -521,11 +522,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     public static void createTextFile() {
-        FileOutputStream outputStream;
+        FileOutputStream outputStream, outputStream1;
 
         try {
             outputStream = GlobalContext.openFileOutput("SensorData", Context.MODE_PRIVATE);
+            outputStream1 = GlobalContext.openFileOutput("ActiveSignal",Context.MODE_PRIVATE);
             outputStream.close();
+            outputStream1.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
