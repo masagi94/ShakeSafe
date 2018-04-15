@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "904311997649",
+    "firebase_url": "https://shakesafe-ea133.firebaseio.com",
+    "project_id": "shakesafe-ea133",
+    "storage_bucket": "shakesafe-ea133.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:904311997649:android:77b584f7fbb1517d",
+        "android_client_info": {
+          "package_name": "com.gmu.shakesafe"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "904311997649-b8oh1j1i42p1mc11u05ndfn2d0hvbe39.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.gmu.shakesafe",
+            "certificate_hash": "bad5bc75acfbd15b858158c9b68d39dbe74693d7"
+          }
+        },
+        {
+          "client_id": "904311997649-6l99giobhkmsbl53s6ess2m9v6tmfkbr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBnTCfu7F0x45ze0YetMKYUVfuu2nswlIs"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "904311997649-6l99giobhkmsbl53s6ess2m9v6tmfkbr.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,77 @@
+apply plugin: 'com.android.application'
+
+repositories {
+    maven {
+        url 'https://maven.google.com'
+
+    }
+}
+
+android {
+    compileSdkVersion 26
+    buildToolsVersion '27.0.3'
+    defaultConfig {
+        multiDexEnabled true
+        applicationId "com.gmu.shakesafe"
+        minSdkVersion 23 // Was 15, but wasnt working. 1/31/18
+        targetSdkVersion 26
+        versionCode 20 //already updated
+        versionName "2.1.4" //already updated
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    dexOptions {
+        javaMaxHeapSize "4g"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    //// https://mvnrepository.com/artifact/com.rometools/rome
+    //    implementation group: 'com.rometools', name: 'rome', version: '1.5.0'
+    //
+    // THIS DOESNT LET THE APP BUILD...
+    // jsoup HTML parser library @ https://jsoup.org/
+    //implementation 'org.jsoup:jsoup:1.11.2'
+    //for user data storage
+    implementation 'com.android.support:design:26.1.0'
+    implementation 'com.amazonaws:aws-android-sdk-s3:2.6.16'
+    implementation 'com.amazonaws:aws-android-sdk-cognito:2.6.16'
+    //for push notif
+    implementation 'com.amazonaws:aws-android-sdk-pinpoint:2.6.16'
+    implementation('com.amazonaws:aws-android-sdk-auth-core:2.6.+@aar') { transitive = true; }
+    implementation('com.amazonaws:aws-android-sdk-mobile-client:2.6.7@aar') { transitive = true; }
+    // Mobile Client for initializing the SDK
+    implementation('com.amazonaws:aws-android-sdk-mobile-client:2.6.+@aar') { transitive = true; }
+    // Cognito UserPools for SignIn
+    implementation 'com.android.support:support-v4:26.1.0'
+    implementation('com.amazonaws:aws-android-sdk-auth-userpools:2.6.+@aar') { transitive = true; }
+    // Sign in UI Library
+    implementation 'com.android.support:appcompat-v7:26.1.0'
+    implementation('com.amazonaws:aws-android-sdk-auth-ui:2.6.+@aar') { transitive = true; }
+    implementation 'com.google.firebase:firebase-messaging:11.8.0'
+    implementation('com.amazonaws:aws-android-sdk-mobile-client:2.6.7@aar') { transitive = true; }
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation 'com.google.android.gms:play-services-plus:11.8.0'
+    androidTestImplementation('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+    implementation 'com.android.support:appcompat-v7:26.1.0'
+    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
+    //for ads
+    implementation 'com.google.android.gms:play-services-iid:11.8.0'
+    implementation 'com.google.android.gms:play-services-gcm:11.8.0'
+    implementation 'com.google.android.gms:play-services-ads:11.8.0'
+    implementation 'com.google.android.gms:play-services-maps:11.8.0'
+    testImplementation 'junit:junit:4.12'
+    implementation files('libs/jsoup-1.11.2.jar')
+}
+
+
+
+
+apply plugin: 'com.google.gms.google-services'

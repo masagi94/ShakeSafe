@@ -1,0 +1,58 @@
+<resources>
+    <string name="app_name">ShakeSafe</string>
+    <string name="max_accel">Max Recorded Acceleration (m/s^2)</string>
+    <string name="max_accel_x">Max Acceleration X-Axis:</string>
+    <string name="max_accel_y">Max Acceleration Y-Axis:</string>
+    <string name="max_accel_z">Max Acceleration Z-Axis:</string>
+    <string name="current_orientation">Current Orientation</string>
+    <string name="x_axis">X-Axis</string>
+    <string name="y_axis">Y-Axis</string>
+    <string name="z_axis">Z-Axis</string>
+    <string name="zero">0.0</string>
+    <string name="gyro">Gyroscope</string>
+    <string name="current_tilt">Current Horizontal Tilt (degrees)</string>
+    <string name="accel">Accelerometer</string>
+    <string name="thankyou">Thank you for using ShakeSafe!</string>
+
+    <string name="info">
+        "For ShakeSafe to work properly, please leave the app open in the background.
+        The app will only upload data when the phone's screen is off and laying on a flat surface."
+    </string>
+
+    <string name="info2">
+        The map below displays earthquakes around the world with magnitudes greater than 4.5,
+        that were reported within the last day. This data was extracted from USGS.
+    </string>
+
+    <string name="check_mark">✓</string>
+    <string name="title_activity_main2">Main2Activity</string>
+    <string name="title_home">Home</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_notifications">Notifications</string>
+    <string name="title_sensors">Sensors</string>
+    <string name="tab_text_1">Info</string>
+    <string name="tab_text_2">Map</string>
+    <string name="tab_text_3">Sensors</string>
+    <string name="action_settings">Settings</string>
+    <string name="beforeUseInfo">
+        Go into Settings > Search for: Battery optimization > Select All apps > Find ShakeSafe and disable battery optimization.
+    </string>
+    <string name="locationInfo">
+        Location permissions are required to know where vibrations are uploaded from, to effectively find an epicenter.
+    </string>
+    <string name="mediaInfo">
+        To distinguish uploads between this device and others, a unique ID will be used and stored locally in memory.
+        The app will automatically assign this device an ID.
+    </string>
+    <string name="batteryInfo">
+        Earthquake detection on mobile devices is made possible by sensing changes in vibrations using the accelerometer.
+        To use the accelerometer when the phone screen is off, Battery Optimization MUST BE DISABLED. SHAKESAFE WILL NOT WORK
+        IF THIS IS NOT DISABLED. The entire functionality of the app resides in the ability to run in the background.
+        If optimization is not disabled, the Android OS will suspend the app when the phone screen is off,
+        which disables uploads and renders the app useless.
+        Please disable this optimization for the app to work properly.
+    </string>
+    <string name="section_format">Hello World from section: %1$d</string>
+
+
+</resources>
