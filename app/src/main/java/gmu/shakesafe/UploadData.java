@@ -9,6 +9,7 @@ import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
+import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 
 import java.io.File;
@@ -34,6 +35,9 @@ public class UploadData extends AsyncTask<Void, Void, Void> {
     @Override
     protected Void doInBackground(Void... voids) {
         //final Context mContext = c[0];
+//        AmazonS3 s3Client = new AmazonS3Client(AWSMobileClient.getInstance().getCredentialsProvider());
+//
+//        s3Client.deleteObject("shakesafe-userfiles-mobilehub-889569083","s3Folder/HelloWorld.txt");
 
         TransferUtility transferUtility =
                 TransferUtility.builder()
@@ -41,6 +45,9 @@ public class UploadData extends AsyncTask<Void, Void, Void> {
                         .awsConfiguration(AWSMobileClient.getInstance().getConfiguration())
                         .s3Client(new AmazonS3Client(AWSMobileClient.getInstance().getCredentialsProvider()))
                         .build();
+
+
+
 
 
         final TransferObserver uploadObserver =

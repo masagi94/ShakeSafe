@@ -7,6 +7,10 @@ import android.os.PowerManager;
 import android.util.Log;
 
 
+import com.amazonaws.mobile.client.AWSMobileClient;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
+
 import static gmu.shakesafe.MainActivity.LOG_TAG;
 import static gmu.shakesafe.MainActivity.accSensor;
 import static gmu.shakesafe.MainActivity.canUpload;
@@ -14,6 +18,7 @@ import static gmu.shakesafe.MainActivity.screenDelayDone;
 import static gmu.shakesafe.MainActivity.screenDelayStarted;
 import static gmu.shakesafe.MainActivity.sdObject;
 import static gmu.shakesafe.MainActivity.GlobalContext;
+import static gmu.shakesafe.MainActivity.userFileExists;
 
 
 /**
@@ -33,6 +38,8 @@ public class CalculateSensorData extends AsyncTask<SensorEvent, Void, Void> {
         PowerManager pm = (PowerManager) GlobalContext.getSystemService(Context.POWER_SERVICE);
         SensorEvent event = ev[0];
 
+        AmazonS3 s3Client = new AmazonS3Client(AWSMobileClient.getInstance().getCredentialsProvider());
+
         boolean ScreenOn;
 
         try {
@@ -50,7 +57,7 @@ public class CalculateSensorData extends AsyncTask<SensorEvent, Void, Void> {
 
 
 
-            if (MainActivity.mViewPager.getCurrentItem() == 2 || !ScreenOn) {
+            //if (MainActivity.mViewPager.getCurrentItem() == 2 || !ScreenOn) {
                 double newAcc, tilt, denom, deltaX, deltaY, deltaZ;
 
                 double realX, realY, realZ;
@@ -113,26 +120,58 @@ public class CalculateSensorData extends AsyncTask<SensorEvent, Void, Void> {
                         } else if (canUpload && (newAcc >= sdObject.getThreshold()) && screenDelayDone) {
 
                             canUpload = false;
-                            MainActivity.storeData();
+                            //MainActivity.storeData();
 
-                            UploadData up = new UploadData();
-                            up.mContext = GlobalContext;
-                            up.uploadFolder = "s3Folder/";
-                            up.uploadFile = "SensorData";
-                            up.execute();
 
-                            UploadData up2 = new UploadData();
-                            up2.mContext = GlobalContext;
-                            up2.uploadFolder = "ActiveUsers/";
-                            up2.uploadFile = "ActiveSignal";
-                            up2.execute();
+                            String[] data = MainActivity.getLocation().split("/");
+
+                            String userFilesData = data[0] + "/" + data[1] + "/" + data[2] + "/" + data[3];
+                            String activeUsersData = data[0] + "/" + data[1];
+
+                            if(!userFileExists) {
+                                s3Client.putObject("shakesafe-userfiles-mobilehub-889569083",
+                                        "ActiveUsers/" + MainActivity.uniqueID + ".txt", activeUsersData);
+
+                                userFileExists = true;
+                            }
+
+                            s3Client.putObject("shakesafe-userfiles-mobilehub-889569083",
+                                    "s3Folder/" + MainActivity.uniqueID + ".txt", userFilesData);
+
+//                            UploadData up = new UploadData();
+//                            up.mContext = GlobalContext;
+//                            up.uploadFolder = "s3Folder/";
+//                            up.uploadFile = "SensorData";
+//                            up.execute();
+//
+//                            UploadData up2 = new UploadData();
+//                            up2.mContext = GlobalContext;
+//                            up2.uploadFolder = "ActiveUsers/";
+//                            up2.uploadFile = "ActiveSignal";
+//                            up2.execute();
 
 //                            new UploadData().execute(GlobalContext);
-                            Log.d(LOG_TAG, "UPLOADING...");
+                            Log.d(LOG_TAG, "UPLOAD COMPLETE... TIMER STARTED");
+                            MainActivity.uploadTimer();
                         }
+
                     } else
                         Log.d(LOG_TAG, "******** UPLOADS ARE DISABLED ********");
                 }
+                else {
+
+                    try {
+                        if(userFileExists) {
+                            userFileExists = false;
+                            s3Client.deleteObject("shakesafe-userfiles-mobilehub-889569083", "ActiveUsers/" + MainActivity.uniqueID + ".txt");
+                            //Log.d(LOG_TAG, "******** SIGNAL DELETED!!! ********");
+                        }
+                    }
+                    catch (Exception e){
+                        e.printStackTrace();
+                    }
+                }
+
 
 
                 // Local calculations are done. Store values back into the sensor object for future
@@ -147,8 +186,6 @@ public class CalculateSensorData extends AsyncTask<SensorEvent, Void, Void> {
 
                 accSensor.setTilt(tilt);
 
-            }
-        //}
         return null;
     }
 }

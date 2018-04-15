@@ -70,7 +70,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     // folder where the file is and read the UUID for future uploads. This will help us determine which phones are
     // uploading from where.
     public static String uniqueID = "";
-
+    public static Boolean userFileExists = false;
 
     //for ads
     private AdView mAdView;
