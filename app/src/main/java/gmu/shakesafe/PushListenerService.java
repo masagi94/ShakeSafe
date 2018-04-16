@@ -77,8 +77,16 @@ public class PushListenerService extends GcmListenerService{
                     String[] notifData = data.toString().split(",");
                     String[] body;
 
+
+                    for(int i = 0; i < notifData.length; i++ ){
+                        Log.d(LOGTAG, "i = " + i + ": " + notifData[i].toString());
+                    }
+
+
+
+
                     if (notifData.length >= 6) {
-                        body = notifData[5].split("=");
+                        body = notifData[7].split("=");
                         Log.d(LOGTAG, "message = " + body[1]);
 
 
