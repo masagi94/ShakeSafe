@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
@@ -20,7 +21,9 @@ import com.google.android.gms.iid.InstanceID;
 import java.util.concurrent.ExecutionException;
 
 import static gmu.shakesafe.MainActivity.LOG_TAG;
+import static gmu.shakesafe.MainActivity.REAL_EARTHQUAKE;
 import static gmu.shakesafe.MainActivity.pinpointManager;
+import static gmu.shakesafe.MainActivity.EARTHQUAKE_COORDINATES;
 
 
 /**
@@ -61,44 +64,72 @@ public class PushListenerService extends GcmListenerService{
     @Override
     public void onMessageReceived(final String from, final Bundle data) {
 
-        if (MainActivity.NOTIFICATIONS_ON){
 
-            Log.d(LOGTAG, "From:" + from);
-            Log.d(LOGTAG, "Data:" + data.toString());
+        // Check if pinpointManager is null. If it is, it
+        // means the app was closed when the push notification came in, and
+        // it will crash the app if we attempt to use pinpointManager.
 
-            // Check if pinpointManager is null. If it is, it
-            // means the app was closed when the push notification came in, and
-            // it will crash the app if we attempt to use pinpointManager.
-            if (pinpointManager != null){
 
-                final NotificationClient notificationClient = pinpointManager.getNotificationClient();
 
-                NotificationClient.CampaignPushResult pushResult =
-                        notificationClient.handleGCMCampaignPush(from, data, this.getClass());
+            if (MainActivity.NOTIFICATIONS_ON) {
 
-                if (!NotificationClient.CampaignPushResult.NOT_HANDLED.equals(pushResult)) {
-                    // The push message was due to a Pinpoint campaign.
-                    // If the app was in the background, a local notification was added
-                    // in the notification center. If the app was in the foreground, an
-                    // event was recorded indicating the app was in the foreground.
-                    // For the demo, we will broadcast the notification to let the main
-                    // activity display it in a dialog.
-                    if (NotificationClient.CampaignPushResult.APP_IN_FOREGROUND.equals(pushResult)) {
-                        // Create a message that will display the raw
-                        //data of the campaign push in a dialog.
-                        data.putString("message",
-                                String.format("Received Campaign Push:\n%s", data.toString()));
-                        broadcast(from, data);
+                if (pinpointManager != null) {
+                    String[] notifData = data.toString().split(",");
+                    String[] body;
+
+                    if (notifData.length >= 6) {
+                        body = notifData[5].split("=");
+                        Log.d(LOGTAG, "message = " + body[1]);
+
+
+                        String[] coordinates = body[1].split("/");
+                        if (coordinates.length >= 2) {
+                            // Extracts the coordinates from the push notification.
+                            EARTHQUAKE_COORDINATES[0] = coordinates[0];
+                            EARTHQUAKE_COORDINATES[1] = coordinates[1];
+                            REAL_EARTHQUAKE = true;
+                            Log.d(LOGTAG, "Longitude = " + coordinates[0]);
+                            Log.d(LOGTAG, "Latitude = " + coordinates[1]);
+                        }
                     }
-                }
-            }
-            else {
+
+
+                    final NotificationClient notificationClient = pinpointManager.getNotificationClient();
+
+                    NotificationClient.CampaignPushResult pushResult =
+                            notificationClient.handleGCMCampaignPush(from, data, this.getClass());
+
+                    if (!NotificationClient.CampaignPushResult.NOT_HANDLED.equals(pushResult)) {
+                        // The push message was due to a Pinpoint campaign.
+                        // If the app was in the background, a local notification was added
+                        // in the notification center. If the app was in the foreground, an
+                        // event was recorded indicating the app was in the foreground.
+                        // For the demo, we will broadcast the notification to let the main
+                        // activity display it in a dialog.
+                        if (NotificationClient.CampaignPushResult.APP_IN_FOREGROUND.equals(pushResult)) {
+                            // Create a message that will display the raw
+                            //data of the campaign push in a dialog.
+                            data.putString("message",
+                                    String.format("Received Campaign Push:\n%s", data.toString()));
+                            broadcast(from, data);
+                        }
+                    }
+
+
+//                // THIS TURNS ON THE APPLICATION
+//                Intent nextActivityIntent = new Intent(this, MainActivity.class);
+//                startActivity(nextActivityIntent);
+
+
+                } else {
                     // THIS TURNS ON THE APPLICATION
                     Intent nextActivityIntent = new Intent(this, MainActivity.class);
                     startActivity(nextActivityIntent);
+
+                }
             }
-        }
-        else
-            Log.d(LOG_TAG, "******** NOTIFICATIONS ARE DISABLED ********");
+            else
+                Log.d(LOG_TAG, "******** NOTIFICATIONS ARE DISABLED ********");
+
     }
 }

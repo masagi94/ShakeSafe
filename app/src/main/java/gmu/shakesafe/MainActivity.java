@@ -60,9 +60,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     // These variables are used for testing. Turn them on or off to control the app.
 
     public static boolean UPLOADS_ON = true;
-    public static boolean NOTIFICATIONS_ON = false;
+    public static boolean NOTIFICATIONS_ON = true;
 
     //*******************************************************************************
+
+    public static String[] EARTHQUAKE_COORDINATES = new  String[2];
+    public static boolean REAL_EARTHQUAKE = false;
 
 
     // A UUID that will be used to upload data to the cloud. This unique ID will only be generated one time.
@@ -485,54 +488,5 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
         }).start();
     }
-
-
-
-    // Function for storing data internally on the phone.
-    public static void storeData() {
-
-//        String location = getLocation();
-
-        String[] data = getLocation().split("/");
-
-        String userFilesData = data[0] + "/" + data[1] + "/" + data[2] + "/" + data[3];
-        String activeUsersData = data[0] + "/" + data[1];
-
-
-        // creates the text file to write to if it doesn't exist yet
-        if (!fileCreated) {
-            createTextFile();
-            fileCreated = true;
-        }
-
-        FileOutputStream outputStream;
-
-        // can use Context.MODE_APPEND to add to the end of the file...
-        try {
-            outputStream = GlobalContext.openFileOutput("SensorData", Context.MODE_PRIVATE);
-            outputStream.write(userFilesData.getBytes());
-
-            outputStream = GlobalContext.openFileOutput("ActiveSignal", Context.MODE_PRIVATE);
-            outputStream.write(activeUsersData.getBytes());
-
-            outputStream.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void createTextFile() {
-        FileOutputStream outputStream, outputStream1;
-
-        try {
-            outputStream = GlobalContext.openFileOutput("SensorData", Context.MODE_PRIVATE);
-            outputStream1 = GlobalContext.openFileOutput("ActiveSignal",Context.MODE_PRIVATE);
-            outputStream.close();
-            outputStream1.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
 
 }

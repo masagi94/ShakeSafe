@@ -3,6 +3,7 @@ package gmu.shakesafe;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,6 +19,7 @@ import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import static gmu.shakesafe.MainActivity.EARTHQUAKE_COORDINATES;
 import static gmu.shakesafe.MainActivity.mapMarkers;
 
 /**
@@ -107,9 +109,21 @@ import static gmu.shakesafe.MainActivity.mapMarkers;
 
             googleMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
 
-            googleMap.addMarker(new MarkerOptions()
-                    .position(new LatLng(38.8315, -77.3119))
-                    .title("George Mason University"));
+
+            if (MainActivity.REAL_EARTHQUAKE){
+                googleMap.addMarker(new MarkerOptions()
+                        .position(new LatLng(Double.parseDouble(EARTHQUAKE_COORDINATES[1]), Double.parseDouble(EARTHQUAKE_COORDINATES[0])))
+                        .title("POSSIBLE EARTHQUAKE. CHECK THE NEWS.")
+                        .icon(BitmapDescriptorFactory.defaultMarker(0.0f)));
+
+                Log.d("REAL EARTHQUAKE: ", "COMPLETED");
+            }
+
+
+
+//            googleMap.addMarker(new MarkerOptions()
+//                    .position(new LatLng(38.8315, -77.3119))
+//                    .title("George Mason University"));
 
 
             googleMap.addCircle(new CircleOptions()
