@@ -64,80 +64,61 @@ public class PushListenerService extends GcmListenerService{
     @Override
     public void onMessageReceived(final String from, final Bundle data) {
 
-
-        // Check if pinpointManager is null. If it is, it
-        // means the app was closed when the push notification came in, and
-        // it will crash the app if we attempt to use pinpointManager.
-
-
-
+        if (pinpointManager != null) {
             if (MainActivity.NOTIFICATIONS_ON) {
 
-                if (pinpointManager != null) {
-                    String[] notifData = data.toString().split(",");
-                    String[] body;
+                final NotificationClient notificationClient = pinpointManager.getNotificationClient();
 
+                NotificationClient.CampaignPushResult pushResult =
+                        notificationClient.handleGCMCampaignPush(from, data, this.getClass());
 
-                    for(int i = 0; i < notifData.length; i++ ){
-                        Log.d(LOGTAG, "i = " + i + ": " + notifData[i].toString());
-                    }
-
+                String[] notifData = data.toString().split(",");
+                String[] body;
 
 
 
-                    if (notifData.length >= 6) {
-                        body = notifData[7].split("=");
-                        Log.d(LOGTAG, "message = " + body[1]);
+//                    for (int i = 0; i < notifData.length; i++) {
+//                        Log.d(LOGTAG, "i = " + i + ": " + notifData[i]);
+//                    }
 
 
-                        String[] coordinates = body[1].split("/");
-                        if (coordinates.length >= 2) {
-                            // Extracts the coordinates from the push notification.
-                            EARTHQUAKE_COORDINATES[0] = coordinates[0];
-                            EARTHQUAKE_COORDINATES[1] = coordinates[1];
-                            REAL_EARTHQUAKE = true;
-                            Log.d(LOGTAG, "Longitude = " + coordinates[0]);
-                            Log.d(LOGTAG, "Latitude = " + coordinates[1]);
-                        }
-                    }
+                // Extracts the data from the message received
+                if (notifData.length >= 6) {
+                    body = notifData[7].split("=");
+                    Log.d(LOGTAG, "message = " + body[1]);
 
 
-                    final NotificationClient notificationClient = pinpointManager.getNotificationClient();
-
-                    NotificationClient.CampaignPushResult pushResult =
-                            notificationClient.handleGCMCampaignPush(from, data, this.getClass());
-
-                    if (!NotificationClient.CampaignPushResult.NOT_HANDLED.equals(pushResult)) {
-                        // The push message was due to a Pinpoint campaign.
-                        // If the app was in the background, a local notification was added
-                        // in the notification center. If the app was in the foreground, an
-                        // event was recorded indicating the app was in the foreground.
-                        // For the demo, we will broadcast the notification to let the main
-                        // activity display it in a dialog.
-                        if (NotificationClient.CampaignPushResult.APP_IN_FOREGROUND.equals(pushResult)) {
-                            // Create a message that will display the raw
-                            //data of the campaign push in a dialog.
-                            data.putString("message",
-                                    String.format("Received Campaign Push:\n%s", data.toString()));
-                            broadcast(from, data);
-                        }
-                    }
-
-
-//                // THIS TURNS ON THE APPLICATION
-//                Intent nextActivityIntent = new Intent(this, MainActivity.class);
-//                startActivity(nextActivityIntent);
-
-
-                } else {
-                    // THIS TURNS ON THE APPLICATION
-                    Intent nextActivityIntent = new Intent(this, MainActivity.class);
-                    startActivity(nextActivityIntent);
+                    String[] coordinates = body[1].split("/");
 
                 }
-            }
-            else
-                Log.d(LOG_TAG, "******** NOTIFICATIONS ARE DISABLED ********");
+                else
+                    return;
 
+                REAL_EARTHQUAKE = true;
+
+
+                if (!NotificationClient.CampaignPushResult.NOT_HANDLED.equals(pushResult)) {
+                    // The push message was due to a Pinpoint campaign.
+                    // If the app was in the background, a local notification was added
+                    // in the notification center. If the app was in the foreground, an
+                    // event was recorded indicating the app was in the foreground.
+                    // For the demo, we will broadcast the notification to let the main
+                    // activity display it in a dialog.
+                    if (NotificationClient.CampaignPushResult.APP_IN_FOREGROUND.equals(pushResult)) {
+                        // Create a message that will display the raw
+                        //data of the campaign push in a dialog.
+                        data.putString("message","ALERT\n" + body[1]);
+
+                        broadcast(from, data);
+                    }
+                }
+            } else
+                Log.d(LOG_TAG, "******** NOTIFICATIONS ARE DISABLED ********");
+        }
+        else {
+            // THIS TURNS ON THE APPLICATION
+            Intent nextActivityIntent = new Intent(this, MainActivity.class);
+            startActivity(nextActivityIntent);
+        }
     }
 }

@@ -1,7 +1,14 @@
 package gmu.shakesafe;
 
 import android.os.AsyncTask;
+import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
+
+import com.amazonaws.mobile.client.AWSMobileClient;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.io.BufferedInputStream;
@@ -20,10 +27,13 @@ import static gmu.shakesafe.MainActivity.mapMarkers;
  *      scraping is performed on another thread.
  */
 
+
+
+
 public class ScrapeUSGS extends AsyncTask<Void, Void, Void>{
 
     //String words;
-
+    public static MapMarkerObject earthquakeMarker;
 
     // This helper method handles the connection to the website passed in as a parameter.
     private String request(String uri) throws Exception {
@@ -52,6 +62,48 @@ public class ScrapeUSGS extends AsyncTask<Void, Void, Void>{
 
     @Override
     protected Void doInBackground(Void... params){
+
+
+        AmazonS3 s3Client = new AmazonS3Client(AWSMobileClient.getInstance().getCredentialsProvider());
+
+
+        // This section of the code checks for an Earthquake.txt file in s3, which would indicate there is an
+        // earthquake. If the earthquake is found, it will plot it in the map, and change the camera view to it.
+        System.out.println("CHECKING IF EARTHQUAKE EXISTS");
+        if(s3Client.doesObjectExist(MainActivity.S3Bucket, MainActivity.quakeKey)) {
+            MainActivity.REAL_EARTHQUAKE = true;
+
+            System.out.println("************************** EARTHQUAKE FOUND **************************");
+            S3ObjectInputStream oInStream = s3Client.getObject(MainActivity.S3Bucket, MainActivity.quakeKey).getObjectContent();
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(oInStream));
+
+            String line;
+            String[] coordinates;
+            try {
+                if ((line = reader.readLine()) != null) {
+                    coordinates = line.split("/");
+
+                    earthquakeMarker = new MapMarkerObject("POSSIBLE EARTHQUAKE", 0, Double.parseDouble(coordinates[0]), Double.parseDouble(coordinates[1]));
+
+
+                }
+
+                oInStream.close();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+
+        }
+        else{
+            System.out.println("NO EARTHQUAKE FOUND");
+        }
+
+
+
+
 
         Log.d(LOG_TAG, "CREATING MAP MARKERS.");
 
@@ -123,18 +175,22 @@ public class ScrapeUSGS extends AsyncTask<Void, Void, Void>{
                 mapMarkers[i] = marker;
             }
 
+
+
             Log.d("USGS GEOJSON PARSER: ", "COMPLETED");
         }
         catch(Exception e){
             //e.printStackTrace();
             Log.d("USGS GEOJSON PARSER: ", "FAILED");
         }
+
         return null;
     }
 
     @Override
     protected void onPostExecute(Void aVoid) {
         super.onPostExecute(aVoid);
+
     }
 
 }

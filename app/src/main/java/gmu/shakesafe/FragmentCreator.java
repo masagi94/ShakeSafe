@@ -8,6 +8,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.amazonaws.mobile.client.AWSMobileClient;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
@@ -19,7 +24,11 @@ import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+
 import static gmu.shakesafe.MainActivity.EARTHQUAKE_COORDINATES;
+import static gmu.shakesafe.MainActivity.LOG_TAG;
 import static gmu.shakesafe.MainActivity.mapMarkers;
 
 /**
@@ -60,24 +69,28 @@ import static gmu.shakesafe.MainActivity.mapMarkers;
 
             View rootView;
 
-            // Tab 1 - Information
-            if(getArguments().getInt(ARG_SECTION_NUMBER) == 1){
-                rootView = inflater.inflate(R.layout.information_layout, container, false);
-                return rootView;
-            }
 
-            // Tab 2 - Map
-            else if(getArguments().getInt(ARG_SECTION_NUMBER) == 2){
+
+            // Tab 1 - Map
+            if(getArguments().getInt(ARG_SECTION_NUMBER) == 1){
                 mView = inflater.inflate(R.layout.map_layout, container, false);
                 return mView;
             }
 
-            // Tab 3 - Sensors
-            else if(getArguments().getInt(ARG_SECTION_NUMBER) == 3){
+            // Tab 2 - Sensors
+            else if(getArguments().getInt(ARG_SECTION_NUMBER) == 2){
                 rootView = inflater.inflate(R.layout.sensor_layout, container, false);
 
                 return rootView;
             }
+
+            // Tab 3 - Information
+            else if(getArguments().getInt(ARG_SECTION_NUMBER) == 3){
+                rootView = inflater.inflate(R.layout.information_layout, container, false);
+                return rootView;
+            }
+
+
 
             // Any other tab - null
             else
@@ -89,7 +102,7 @@ import static gmu.shakesafe.MainActivity.mapMarkers;
         public void onViewCreated(View view, Bundle savedInstanceState){
             super.onViewCreated(view, savedInstanceState);
 
-            if (getArguments().getInt(ARG_SECTION_NUMBER) == 2){
+            if (getArguments().getInt(ARG_SECTION_NUMBER) == 1){
                 mMapView = (MapView) mView.findViewById(R.id.mapView);
 
                 if (mMapView != null){
@@ -107,23 +120,10 @@ import static gmu.shakesafe.MainActivity.mapMarkers;
             MapsInitializer.initialize(getContext());
             mGoogleMap = googleMap;
 
+
+
             googleMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
 
-
-            if (MainActivity.REAL_EARTHQUAKE){
-                googleMap.addMarker(new MarkerOptions()
-                        .position(new LatLng(Double.parseDouble(EARTHQUAKE_COORDINATES[1]), Double.parseDouble(EARTHQUAKE_COORDINATES[0])))
-                        .title("POSSIBLE EARTHQUAKE. CHECK THE NEWS.")
-                        .icon(BitmapDescriptorFactory.defaultMarker(0.0f)));
-
-                Log.d("REAL EARTHQUAKE: ", "COMPLETED");
-            }
-
-
-
-//            googleMap.addMarker(new MarkerOptions()
-//                    .position(new LatLng(38.8315, -77.3119))
-//                    .title("George Mason University"));
 
 
             googleMap.addCircle(new CircleOptions()
@@ -132,11 +132,23 @@ import static gmu.shakesafe.MainActivity.mapMarkers;
                     .strokeColor(Color.RED)
                     .fillColor(Color.TRANSPARENT));
 
+            if(ScrapeUSGS.earthquakeMarker != null) {
+                // Maps will center around the earthquake that was found
+                CameraPosition US = CameraPosition.builder().target(new LatLng(ScrapeUSGS.earthquakeMarker.getLatitude(), ScrapeUSGS.earthquakeMarker.getLongitude())).zoom(3).bearing(0).tilt(45).build();
+                googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(US));
+                googleMap.addMarker(new MarkerOptions()
+                        .position(new LatLng(ScrapeUSGS.earthquakeMarker.getLatitude(), ScrapeUSGS.earthquakeMarker.getLongitude()))
+                        .title(ScrapeUSGS.earthquakeMarker.getTitle()).snippet("GET TO SAFETY, CHECK THE NEWS")
+                        .icon(BitmapDescriptorFactory.defaultMarker(0.0f)));
 
-            // Maps will center around the US and show different markers at once
-            CameraPosition US = CameraPosition.builder().target(new LatLng(40.600691, -96.668929)).zoom(3).bearing(0).tilt(45).build();
-            googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(US));
+                System.out.println("EARTHQUAKE MARKER CREATED");
+            }
+            else{
+                // Maps will center around the US and show different markers at once
+                CameraPosition US = CameraPosition.builder().target(new LatLng(40.600691, -96.668929)).zoom(3).bearing(0).tilt(45).build();
+                googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(US));
 
+            }
 
             // This while-loop populates the map tab with markers of recent earthquakes
             int i = 0;
@@ -149,6 +161,8 @@ import static gmu.shakesafe.MainActivity.mapMarkers;
                         .title(mapMarkers[i].getTitle()).snippet("Magnitude " + mapMarkers[i].getMagnitude())
                         .icon(BitmapDescriptorFactory.defaultMarker(mapMarkers[i].getColor())));
                 i++;
+
+                System.out.println("MARKER CREATED: " + i);
             }
 
         }

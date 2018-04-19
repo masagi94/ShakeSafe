@@ -20,9 +20,7 @@ public class MapMarkerObject {
     private float red = 0.0f;
 
     //constructor
-    public MapMarkerObject(){
-
-    }
+    public MapMarkerObject(){ }
 
     public MapMarkerObject(String t, double mag, double lng, double lat) {
         title = t;

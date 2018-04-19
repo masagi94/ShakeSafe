@@ -2,13 +2,13 @@ package gmu.shakesafe;
 
 
 import android.Manifest;
-import android.content.BroadcastReceiver;
+import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Handler;
-import android.os.PowerManager;
+import android.os.Looper;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.ViewPager;
@@ -25,33 +25,30 @@ import android.widget.TextView;
 //for sensor
 
 
-//for push notif
+// For push notif
 import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobileconnectors.pinpoint.PinpointConfiguration;
 import com.amazonaws.mobileconnectors.pinpoint.PinpointManager;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 import com.google.android.gms.iid.InstanceID;
 //end push notif
 
-//for adview
+// For adview
 import com.google.android.gms.ads.MobileAds;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
 //end adview
 
 
-//user data storage
-import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
-import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
-import com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver;
-import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener;
-import com.amazonaws.services.s3.AmazonS3Client;
 
+// User data storage
 import java.io.*;
 import java.io.FileOutputStream;
 import java.text.DecimalFormat;
 import java.util.UUID;
-//user data storage
+
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener, SensorFragment.sensorValues {
 
@@ -68,6 +65,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public static boolean REAL_EARTHQUAKE = false;
 
 
+    public static final String S3Bucket = "shakesafe-userfiles-mobilehub-889569083";
+    public static final String quakeKey = "Earthquake/Earthquake.txt";
+    public static String uploadFileKey = "";
+
+
     // A UUID that will be used to upload data to the cloud. This unique ID will only be generated one time.
     // After it is generated, it will be stored on the phone, and every time the phone runs it will look for the
     // folder where the file is and read the UUID for future uploads. This will help us determine which phones are
@@ -79,14 +81,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private AdView mAdView;
 
     // For handling new threads
-    private static Handler nHandler = new Handler();
+    private static Handler nHandler = new Handler(Looper.getMainLooper());
 
     //for upload management
     public static boolean canUpload = true;
     public static boolean screenDelayStarted, screenDelayDone = false;
-
-    //for creating the text file that will contain the sensor data
-    private static boolean fileCreated = false;
 
 
     //following two lines are for AWS push services
@@ -120,6 +119,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     public static Context GlobalContext;
 
+    public static boolean scrapeDone = false;
+
 
     // This array will hold all the map markers that are created when we scrape USGS.
     public static MapMarkerObject[] mapMarkers = {null, null, null, null, null, null, null, null, null, null};
@@ -128,22 +129,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        initializePinpoint();
+        new ScrapeUSGS().execute();
+
         setContentView(R.layout.activity_main);
-
-
-        //mContext = getApplicationContext();
-
         getPermissions();
         createUUID();
         //initializeAdViews();
+
         initializeSensorManager();
-        initializePinpoint();
-
-        initializeTabs();
-
-
-        new ScrapeUSGS().execute();
-
+        initializeTabs(REAL_EARTHQUAKE);
 
     }
 
@@ -193,6 +189,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
         } else
             uniqueID = getUUID();
+
+        uploadFileKey = "ActiveUsers/" + uniqueID + ".txt";
     }
 
     // This returns the UUID that is already stored on the phone.
@@ -224,7 +222,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     // Initializes the tab layout for the app. Can change which tab the app opens up to on startup in here.
-    private void initializeTabs() {
+    public void initializeTabs(boolean showMap) {
         // Create the adapter that will return a fragment for each of the three
         // primary sections of the activity.
         mSectionsPageAdapter = new SectionsPageAdapter(getSupportFragmentManager());
@@ -240,7 +238,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
 
         // This is how we can change what tab the app opens up to. Adjust this to account for a push notifications
-        // mViewPager.setCurrentItem(2);
+        //mViewPager.setCurrentItem(2);
 
     }
 
@@ -362,27 +360,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 //                new IntentFilter(PushListenerService.ACTION_PUSH_NOTIFICATION));
     }
 
-//    private final BroadcastReceiver notificationReceiver = new BroadcastReceiver() {
-//        @Override
-//        public void onReceive(Context context, Intent intent) {
-//            try {
-//                Log.d(LOG_TAG, "Received notification from local broadcast. Display it in a dialog.");
-//
-//                Bundle data = intent.getBundleExtra(PushListenerService.INTENT_SNS_NOTIFICATION_DATA);
-//
-//                String message = PushListenerService.getMessage(data);
-//
-//                new AlertDialog.Builder(MainActivity.this)
-//                        .setTitle("Push notification")
-//                        .setMessage(message)
-//                        .setPositiveButton(android.R.string.ok, null)
-//                        .show();
-//            } catch (Exception e) {
-//                 e.printStackTrace();
-//            }
-//        }
-//
-//    };
 
     // This retrieves the location and stores it into a string.
     public static String getLocation() {
@@ -416,17 +393,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     // This updates the values on the sensor tab.
     @Override
     public void setSensorValues() {
-        TextView xText = findViewById(R.id.currentX);
-        TextView yText = findViewById(R.id.currentY);
-        TextView zText = findViewById(R.id.currentZ);
+        //TextView xText = findViewById(R.id.currentX);
+        //TextView yText = findViewById(R.id.currentY);
+        //TextView zText = findViewById(R.id.currentZ);
         TextView tiltText = findViewById(R.id.current_tilt);
         TextView SDText = findViewById(R.id.StandardDeviation);
 
         DecimalFormat df = new DecimalFormat("##.##");
 
-        xText.setText(df.format(accSensor.getDeltaX()));
-        yText.setText(df.format(accSensor.getDeltaY()));
-        zText.setText(df.format(accSensor.getDeltaZ()));
+        //xText.setText(df.format(accSensor.getDeltaX()));
+        //yText.setText(df.format(accSensor.getDeltaY()));
+        //zText.setText(df.format(accSensor.getDeltaZ()));
         tiltText.setText(df.format(accSensor.getTilt()));
         SDText.setText(Double.toString(sdObject.getCurrentSD()));
     }
@@ -440,17 +417,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     public void onSensorChanged(SensorEvent event) {
 
+
         GlobalContext = getApplicationContext();
 
         new CalculateSensorData().execute(event);
         // If the current tab is the sensor tab, then update the sensors
 
-        if (mViewPager.getCurrentItem() == 2)
+        if (mViewPager.getCurrentItem() == 1)
             setSensorValues();
     }
-
-
-
 
 
     // This creates a delay after an upload occurs to stop subsequent uploads.

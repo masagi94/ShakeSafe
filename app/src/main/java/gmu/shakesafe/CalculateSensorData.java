@@ -13,6 +13,12 @@ import android.util.Log;
 import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 
 import static gmu.shakesafe.MainActivity.LOG_TAG;
 import static gmu.shakesafe.MainActivity.accSensor;
@@ -50,6 +56,7 @@ public class CalculateSensorData extends AsyncTask<SensorEvent, Void, Void> {
 
 
         AmazonS3 s3Client = new AmazonS3Client(AWSMobileClient.getInstance().getCredentialsProvider());
+
 
         boolean ScreenOn;
 
@@ -107,6 +114,7 @@ public class CalculateSensorData extends AsyncTask<SensorEvent, Void, Void> {
         newAcc = Math.sqrt(realX * realX + realY * realY + realZ * realZ);
 
 
+
         // Calculates the standard deviation on a background thread
         new CalculateSD().execute(newAcc);
 
@@ -158,8 +166,11 @@ public class CalculateSensorData extends AsyncTask<SensorEvent, Void, Void> {
             // This deletes the ActiveUsers file in S3 if the phone is no longer considered active.
             try {
                 if(userFileExists) {
+
                     userFileExists = false;
-                    s3Client.deleteObject("shakesafe-userfiles-mobilehub-889569083", "ActiveUsers/" + MainActivity.uniqueID + ".txt");
+
+                    s3Client.deleteObject(MainActivity.S3Bucket, MainActivity.uploadFileKey);
+
                 }
             }
             catch (Exception e){
