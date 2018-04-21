@@ -61,9 +61,24 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     //*******************************************************************************
 
-    public static String[] EARTHQUAKE_COORDINATES = new  String[2];
-    public static boolean REAL_EARTHQUAKE = false;
 
+
+    /**
+     * This object will track the changes in standard deviation. To change the size of the sample window,
+     * change sampleNum in the parameters. The multiplier is used to adjust the threshold.
+     * A multiplier of 3 would equate to: threshold = mean - 3*standardDeviation.
+     * This standard deviation object is used by CalculateSD.java, as well as here.
+     */
+    public static StandardDeviationObject sdObject = new StandardDeviationObject(100, 5);
+    public static double[] tremorCheckArray = new double[1000];
+    public static int tremorCheckIndex = 0;
+    public static double checkThreshold = 0;
+    public static boolean isThresholdSet = false;
+    public static boolean isThresholdSurpassedOnce = false;
+    public static boolean isThresholdSurpassedTwice = false;
+    public static SensorObject accSensor = new SensorObject();
+
+    public static boolean REAL_EARTHQUAKE = false;
 
     public static final String S3Bucket = "shakesafe-userfiles-mobilehub-889569083";
     public static final String quakeKey = "Earthquake/Earthquake.txt";
@@ -101,25 +116,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private SensorManager sensorManager;
     private Sensor accelerometer;
 
-
-    /**
-     * This object will track the changes in standard deviation. To change the size of the sample window,
-     * change sampleNum in the parameters. The multiplier is used to adjust the threshold.
-     * A multiplier of 3 would equate to: threshold = mean - 3*standardDeviation.
-     * This standard deviation object is used by CalculateSD.java, as well as here.
-     */
-    public static StandardDeviationObject sdObject = new StandardDeviationObject(500, 3);
-
-    public static SensorObject accSensor = new SensorObject();
-
-
-
     private SectionsPageAdapter mSectionsPageAdapter;
     public static ViewPager mViewPager;
 
     public static Context GlobalContext;
-
-    public static boolean scrapeDone = false;
 
 
     // This array will hold all the map markers that are created when we scrape USGS.
@@ -342,7 +342,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public void onStop() {
         super.onStop();
         Log.d(TAG, "-- ON STOP --");
-        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_GAME);
+        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
 
     }
 
@@ -352,7 +352,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         super.onResume();
         Log.d(TAG, "-- ON RESUME --");
 
-        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_GAME);
+        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
 
 //
 //        //register notification receiver

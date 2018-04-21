@@ -15,12 +15,10 @@
     <string name="thankyou">Thank you for using ShakeSafe!</string>
 
     <string name="info">
-        The app checks if your device is shaking more than usual, by calculating the standard
-        deviation of the accelerometer data. Then, a signal is uploaded to the cloud, where
-        further calculations are performed to test it against a Poisson Distribution. If an earthquake is
-        determined, a push notification will be sent out, and the earthquake will appear on the map.
-        For ShakeSafe to work properly, please leave the app open in the background.
-        The app will only upload data when the phone's screen is off, laying on a flat surface, and charging.
+        The app checks if your device is shaking more than usual by comparing the accelerometer readings to the standard
+        deviation. A signal is then uploaded to the cloud, where it is compared with data from other
+        users and a decision can be made about an earthquake. If an earthquake is
+        detected, a push notification will be sent out and the earthquake will appear on the map.
     </string>
 
     <string name="uploadInfo">

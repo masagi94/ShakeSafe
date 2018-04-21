@@ -1,29 +1,15 @@
 package gmu.shakesafe;
 
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Looper;
 import android.support.v4.content.LocalBroadcastManager;
-import android.support.v7.app.AlertDialog;
 import android.util.Log;
-
-import com.amazonaws.mobile.client.AWSMobileClient;
-import com.amazonaws.mobileconnectors.pinpoint.PinpointConfiguration;
-import com.amazonaws.mobileconnectors.pinpoint.PinpointManager;
 import com.amazonaws.mobileconnectors.pinpoint.targeting.notification.NotificationClient;
-import com.amazonaws.mobileconnectors.pinpoint.targeting.notification.NotificationDetails;
 import com.google.android.gms.gcm.GcmListenerService;
-import com.google.android.gms.gcm.GoogleCloudMessaging;
-import com.google.android.gms.iid.InstanceID;
-
-import java.util.concurrent.ExecutionException;
-
 import static gmu.shakesafe.MainActivity.LOG_TAG;
 import static gmu.shakesafe.MainActivity.REAL_EARTHQUAKE;
 import static gmu.shakesafe.MainActivity.pinpointManager;
-import static gmu.shakesafe.MainActivity.EARTHQUAKE_COORDINATES;
 
 
 /**

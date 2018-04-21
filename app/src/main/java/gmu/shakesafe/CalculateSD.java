@@ -48,6 +48,10 @@ public class CalculateSD extends AsyncTask<Double, Void, Void> {
         sdObject.setMagnitudes(magnitudeArray);
         sdObject.setSum(sum);
         sdObject.setCurrentSD(Math.sqrt(standardDeviation / magnitudeArray.length));
+        //sdObject.setCurrentSD((standardDeviation / magnitudeArray.length));
+
+        System.out.println("FROM CALCULATESD, ACCELERATION: " + newValue + " Threshold: " + sdObject.getThreshold() + " Mean: " + mean);
+
         sdObject.setThreshold(mean);
 
 

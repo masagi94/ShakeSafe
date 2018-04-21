@@ -14,11 +14,7 @@ public class StandardDeviationObject {
     private double sum, threshold, currentSD, sdMultiplier;
     private boolean arrayFull = false;
 
-    // Constructor
-    public StandardDeviationObject() {
-        magnitudes = new double[500];
-        sdMultiplier = 3;
-    }
+
 
     public StandardDeviationObject(int sampleNum, double sdMultiplier){
         magnitudes = new double[sampleNum];

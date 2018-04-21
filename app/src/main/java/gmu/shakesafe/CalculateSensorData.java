@@ -23,10 +23,16 @@ import java.io.InputStreamReader;
 import static gmu.shakesafe.MainActivity.LOG_TAG;
 import static gmu.shakesafe.MainActivity.accSensor;
 import static gmu.shakesafe.MainActivity.canUpload;
+import static gmu.shakesafe.MainActivity.checkThreshold;
+import static gmu.shakesafe.MainActivity.isThresholdSet;
+import static gmu.shakesafe.MainActivity.isThresholdSurpassedOnce;
+import static gmu.shakesafe.MainActivity.isThresholdSurpassedTwice;
 import static gmu.shakesafe.MainActivity.screenDelayDone;
 import static gmu.shakesafe.MainActivity.screenDelayStarted;
 import static gmu.shakesafe.MainActivity.sdObject;
 import static gmu.shakesafe.MainActivity.GlobalContext;
+import static gmu.shakesafe.MainActivity.tremorCheckArray;
+import static gmu.shakesafe.MainActivity.tremorCheckIndex;
 import static gmu.shakesafe.MainActivity.userFileExists;
 
 
@@ -114,10 +120,39 @@ public class CalculateSensorData extends AsyncTask<SensorEvent, Void, Void> {
         newAcc = Math.sqrt(realX * realX + realY * realY + realZ * realZ);
 
 
-
         // Calculates the standard deviation on a background thread
-        new CalculateSD().execute(newAcc);
+        //new CalculateSD().execute(newAcc);
+        if(isThresholdSurpassedOnce) {
+            if(tremorCheckIndex < tremorCheckArray.length){
+                tremorCheckArray[tremorCheckIndex] = newAcc;
+                tremorCheckIndex++;
+            }
+            else{
+                double sum = 0, average;
 
+                for(int i = 0; i < tremorCheckArray.length; i++){
+                    sum += tremorCheckArray[i];
+                }
+
+                average = sum / tremorCheckArray.length;
+
+                System.out.println("AVERAGE = " + average + " THRESHOLD = " + checkThreshold);
+
+                // If the threshold is passed again (indicating a constant shaking), then we upload
+                if(average >= checkThreshold){
+                    isThresholdSurpassedTwice = true;
+                }
+                else{
+                    Log.d(LOG_TAG, "*********************** THRESHOLD RESET ***********************");
+                    isThresholdSurpassedOnce = false;
+                    isThresholdSet = false;
+                }
+            }
+        }
+        else{
+            calculateDeviation(newAcc);
+        }
+        //System.out.println("MAIN, ACCELERATION: " + newAcc + " Threshold: " + sdObject.getThreshold());
 
 
         // This portion of the code uploads data if the phone screen is off,
@@ -134,8 +169,36 @@ public class CalculateSensorData extends AsyncTask<SensorEvent, Void, Void> {
                     MainActivity.screenOffTimer();
                     Log.d(LOG_TAG, "SCREEN OFF TIMER: STARTED");
 
-                } else if (canUpload && (newAcc >= sdObject.getThreshold()) && screenDelayDone) {
 
+
+
+                } else if (canUpload && (newAcc >= sdObject.getThreshold()) && screenDelayDone && !isThresholdSurpassedOnce) {
+
+                    // If the threshold once has been surpassed, then we check the next 300 samples and take their average to see
+                    // if it's surpassed again.
+
+                    Log.d(LOG_TAG, "*********************** THRESHOLD PASSED ONCE ***********************");
+
+                    isThresholdSurpassedOnce = true;
+                    tremorCheckIndex = 0;
+                    //if(!isThresholdSet){
+                        //isThresholdSet = false;
+                        checkThreshold = sdObject.getThreshold();
+                    //}
+
+
+                    //System.out.println("NEW ACCELERATION: " + newAcc + " Threshold: " + sdObject.getThreshold());
+
+
+                    // If the accelerometer array has an average that passes the threshold again, THEN we upload. This will prevent
+                    // uploads on small things like taps, and will instead only upload when actual shaking occurs.
+
+                }
+                else if(isThresholdSurpassedTwice) {
+                    Log.d(LOG_TAG, "*********************** THRESHOLD PASSED TWICE ***********************");
+                    isThresholdSurpassedOnce = false;
+                    isThresholdSurpassedTwice = false;
+                    isThresholdSet = false;
                     canUpload = false;
 
                     String[] data = MainActivity.getLocation().split("/");
@@ -161,6 +224,7 @@ public class CalculateSensorData extends AsyncTask<SensorEvent, Void, Void> {
             } else
                 Log.d(LOG_TAG, "******** UPLOADS ARE DISABLED ********");
         }
+
         else {
 
             // This deletes the ActiveUsers file in S3 if the phone is no longer considered active.
@@ -194,4 +258,49 @@ public class CalculateSensorData extends AsyncTask<SensorEvent, Void, Void> {
 
         return null;
     }
+
+
+
+    public void calculateDeviation(double value){
+        double newValue = value;
+        double sum, mean, standardDeviation = 0;
+        double[] magnitudeArray = sdObject.getMagnitudes();
+        int magnitudeIndex = sdObject.getMagnitudesIndex();
+
+        sum = sdObject.getSum();
+        sum += newValue;
+
+        // This populates the sd array
+        if (!sdObject.isArrayFull()) {
+            magnitudeArray[magnitudeIndex] = newValue;
+            if (magnitudeIndex == magnitudeArray.length - 1)
+                sdObject.setArrayFull(true);
+            else
+                magnitudeIndex++;
+        } else {
+            // This overwrites the oldest value in the circular array and adjusts
+            // the sum of the values
+            magnitudeIndex = (magnitudeIndex + 1) % magnitudeArray.length;
+            sum -= magnitudeArray[magnitudeIndex];
+            magnitudeArray[magnitudeIndex] = newValue;
+        }
+
+        mean = sum / magnitudeArray.length;
+
+        for(double mgArray : magnitudeArray){
+            standardDeviation += ((mgArray - mean)*(mgArray - mean));
+        }
+
+        sdObject.setMagnitudesIndex(magnitudeIndex);
+        sdObject.setMagnitudes(magnitudeArray);
+        sdObject.setSum(sum);
+        sdObject.setCurrentSD(Math.sqrt(standardDeviation / magnitudeArray.length));
+        //sdObject.setCurrentSD((standardDeviation / magnitudeArray.length));
+
+        //System.out.println("FROM CALCULATESD, ACCELERATION: " + newValue + " Threshold: " + sdObject.getThreshold() + " Mean: " + mean);
+
+        sdObject.setThreshold(mean);
+    }
+
+
 }
