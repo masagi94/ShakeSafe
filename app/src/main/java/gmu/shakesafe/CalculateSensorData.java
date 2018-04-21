@@ -24,6 +24,7 @@ import static gmu.shakesafe.MainActivity.LOG_TAG;
 import static gmu.shakesafe.MainActivity.accSensor;
 import static gmu.shakesafe.MainActivity.canUpload;
 import static gmu.shakesafe.MainActivity.checkThreshold;
+import static gmu.shakesafe.MainActivity.isPhoneActive;
 import static gmu.shakesafe.MainActivity.isThresholdSet;
 import static gmu.shakesafe.MainActivity.isThresholdSurpassedOnce;
 import static gmu.shakesafe.MainActivity.isThresholdSurpassedTwice;
@@ -47,6 +48,9 @@ import static gmu.shakesafe.MainActivity.userFileExists;
 
 
 public class CalculateSensorData extends AsyncTask<SensorEvent, Void, Void> {
+
+
+
 
     @Override
     public Void doInBackground(SensorEvent... ev) {
@@ -122,7 +126,7 @@ public class CalculateSensorData extends AsyncTask<SensorEvent, Void, Void> {
 
         // Calculates the standard deviation on a background thread
         //new CalculateSD().execute(newAcc);
-        if(isThresholdSurpassedOnce) {
+        if(isThresholdSurpassedOnce && isPhoneActive) {
             if(tremorCheckIndex < tremorCheckArray.length){
                 tremorCheckArray[tremorCheckIndex] = newAcc;
                 tremorCheckIndex++;
@@ -145,7 +149,7 @@ public class CalculateSensorData extends AsyncTask<SensorEvent, Void, Void> {
                 else{
                     Log.d(LOG_TAG, "*********************** THRESHOLD RESET ***********************");
                     isThresholdSurpassedOnce = false;
-                    isThresholdSet = false;
+                    //isThresholdSet = false;
                 }
             }
         }
@@ -157,7 +161,7 @@ public class CalculateSensorData extends AsyncTask<SensorEvent, Void, Void> {
 
         // This portion of the code uploads data if the phone screen is off,
         // the tilt is less than 1, and the phone is plugged in.
-        if (tilt < 1 && !ScreenOn && isCharging) {
+        if (tilt < 2 && !ScreenOn && isCharging) {
 
             if (MainActivity.UPLOADS_ON) {
 
@@ -170,45 +174,48 @@ public class CalculateSensorData extends AsyncTask<SensorEvent, Void, Void> {
                     Log.d(LOG_TAG, "SCREEN OFF TIMER: STARTED");
 
 
+//                } else if (canUpload && (newAcc >= sdObject.getThreshold()) && screenDelayDone && !isThresholdSurpassedOnce) {
+                } else if (canUpload && screenDelayDone && !isThresholdSurpassedOnce) {
 
+                    if(!isPhoneActive) {
+                        String[] data = MainActivity.getLocation().split("/");
 
-                } else if (canUpload && (newAcc >= sdObject.getThreshold()) && screenDelayDone && !isThresholdSurpassedOnce) {
+                        String activeUsersData = data[0] + "/" + data[1];
 
-                    // If the threshold once has been surpassed, then we check the next 300 samples and take their average to see
-                    // if it's surpassed again.
+                        s3Client.putObject("shakesafe-userfiles-mobilehub-889569083",
+                                "ActiveUsers/" + MainActivity.uniqueID + ".txt", activeUsersData);
 
-                    Log.d(LOG_TAG, "*********************** THRESHOLD PASSED ONCE ***********************");
+                        isPhoneActive = true;
 
-                    isThresholdSurpassedOnce = true;
-                    tremorCheckIndex = 0;
-                    //if(!isThresholdSet){
+                        Log.d(LOG_TAG, "******************* PHONE ACTIVE *******************");
+                    }
+                    else if((newAcc >= sdObject.getThreshold())){
+                        // If the threshold once has been surpassed, then we check the next 300 samples and take their average to see
+                        // if it's surpassed again.
+
+                        Log.d(LOG_TAG, "*********************** THRESHOLD PASSED ONCE ***********************");
+
+                        isThresholdSurpassedOnce = true;
+                        tremorCheckIndex = 0;
+                        //if(!isThresholdSet){
                         //isThresholdSet = false;
                         checkThreshold = sdObject.getThreshold();
-                    //}
-
-
-                    //System.out.println("NEW ACCELERATION: " + newAcc + " Threshold: " + sdObject.getThreshold());
-
-
+                        //}
+                    }
                     // If the accelerometer array has an average that passes the threshold again, THEN we upload. This will prevent
                     // uploads on small things like taps, and will instead only upload when actual shaking occurs.
 
                 }
-                else if(isThresholdSurpassedTwice) {
+                else if(isThresholdSurpassedTwice && isPhoneActive) {
                     Log.d(LOG_TAG, "*********************** THRESHOLD PASSED TWICE ***********************");
                     isThresholdSurpassedOnce = false;
                     isThresholdSurpassedTwice = false;
-                    isThresholdSet = false;
+                    //isThresholdSet = false;
                     canUpload = false;
 
                     String[] data = MainActivity.getLocation().split("/");
 
                     String userFilesData = data[0] + "/" + data[1] + "/" + data[2] + "/" + data[3];
-                    String activeUsersData = data[0] + "/" + data[1];
-
-
-                    s3Client.putObject("shakesafe-userfiles-mobilehub-889569083",
-                            "ActiveUsers/" + MainActivity.uniqueID + ".txt", activeUsersData);
 
                     userFileExists = true;
 
@@ -218,23 +225,24 @@ public class CalculateSensorData extends AsyncTask<SensorEvent, Void, Void> {
 
 
                     Log.d(LOG_TAG, "UPLOAD COMPLETE... TIMER STARTED");
+
                     MainActivity.uploadTimer();
+
                 }
 
             } else
                 Log.d(LOG_TAG, "******** UPLOADS ARE DISABLED ********");
         }
-
         else {
 
             // This deletes the ActiveUsers file in S3 if the phone is no longer considered active.
             try {
-                if(userFileExists) {
-
-                    userFileExists = false;
-
+                if(isPhoneActive) {
                     s3Client.deleteObject(MainActivity.S3Bucket, MainActivity.uploadFileKey);
-
+                    isPhoneActive = false;
+                    isThresholdSurpassedOnce = false;
+                    isThresholdSurpassedTwice = false;
+                    Log.d(LOG_TAG, "******************* PHONE INACTIVE *******************");
                 }
             }
             catch (Exception e){

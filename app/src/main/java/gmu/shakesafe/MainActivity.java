@@ -76,6 +76,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public static boolean isThresholdSet = false;
     public static boolean isThresholdSurpassedOnce = false;
     public static boolean isThresholdSurpassedTwice = false;
+    public static boolean isPhoneActive = false;
     public static SensorObject accSensor = new SensorObject();
 
     public static boolean REAL_EARTHQUAKE = false;
@@ -439,6 +440,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     public void run() {
                         canUpload = true;
                         Log.d(LOG_TAG, "READY TO UPLOAD");
+                        Log.d(LOG_TAG, "*********************** THRESHOLD RESET ***********************");
                     }
                 });
             }
