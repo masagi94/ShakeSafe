@@ -73,14 +73,6 @@ import static gmu.shakesafe.MainActivity.mapMarkers;
                 return rootView;
             }
 
-            // Tab 3 - Information
-            else if(getArguments().getInt(ARG_SECTION_NUMBER) == 3){
-                rootView = inflater.inflate(R.layout.information_layout, container, false);
-                return rootView;
-            }
-
-
-
             // Any other tab - null
             else
                 return null;
